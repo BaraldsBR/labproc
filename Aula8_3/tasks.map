@@ -1,0 +1,230 @@
+Archive member included to satisfy reference by file (symbol)
+
+/usr/arm-none-eabi/lib/libc_nano.a(libc_a-memset.o)
+                              sched.o (memset)
+/usr/arm-none-eabi/lib/libc_nano.a(libc_a-memcpy-stub.o)
+                              sched.o (memcpy)
+
+There are no discarded input sections
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+
+.boot           0x00008000       0xdc
+ *(.boot)
+ .boot          0x00008000       0xdc boot.o
+                0x00008000                start
+                0x000080e0                        . = ALIGN (0x8)
+
+.text           0x000080e0      0x654
+ *(.text)
+ .text          0x000080e0        0x0 boot.o
+ .text          0x000080e0       0xc4 switch.o
+                0x000080e0                delay
+                0x000080ec                enable_irq
+                0x00008114                panic
+                0x0000811c                swi
+                0x00008150                irq
+                0x00008180                task_switch
+ .text          0x000081a4      0x4b4 sched.o
+                0x000081a4                yield
+                0x000081b8                getpid
+                0x000081d0                getticks
+                0x000081e8                schedule
+                0x00008254                trata_swi
+                0x000082ec                trata_irq
+                0x00008344                sched_init
+                0x00008518                insert_tcb
+ .text          0x00008658       0xdc main.o
+                0x00008658                system_main
+                0x00008670                user1_main
+                0x000086b0                user2_main
+                0x000086f0                user3_main
+ .text          0x00008734        0x0 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memset.o)
+ .text          0x00008734        0x0 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memcpy-stub.o)
+
+.glue_7         0x00008734        0x0
+ .glue_7        0x00008734        0x0 linker stubs
+
+.glue_7t        0x00008734        0x0
+ .glue_7t       0x00008734        0x0 linker stubs
+
+.vfp11_veneer   0x00008734        0x0
+ .vfp11_veneer  0x00008734        0x0 linker stubs
+
+.v4_bx          0x00008734        0x0
+ .v4_bx         0x00008734        0x0 linker stubs
+
+.iplt           0x00008734        0x0
+ .iplt          0x00008734        0x0 boot.o
+
+.text.memset    0x00008734       0x18
+ .text.memset   0x00008734       0x18 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memset.o)
+                0x00008734                memset
+
+.text.memcpy    0x0000874c       0x1c
+ .text.memcpy   0x0000874c       0x1c /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memcpy-stub.o)
+                0x0000874c                memcpy
+
+.rel.dyn        0x00008768        0x0
+ .rel.iplt      0x00008768        0x0 boot.o
+                0x00008768                        . = ALIGN (0x8)
+
+.rodata
+ *(.rodata)
+                0x00008768                        . = ALIGN (0x8)
+                0x00008768                        data_begin = .
+
+.data           0x00008768        0x8
+ *(.data)
+ .data          0x00008768        0x0 boot.o
+ .data          0x00008768        0x0 switch.o
+ .data          0x00008768        0x8 sched.o
+                0x00008768                head
+                0x0000876c                max_ll_size
+ .data          0x00008770        0x0 main.o
+ .data          0x00008770        0x0 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memset.o)
+ .data          0x00008770        0x0 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memcpy-stub.o)
+
+.igot.plt       0x00008770        0x0
+ .igot.plt      0x00008770        0x0 boot.o
+                0x00008770                        . = ALIGN (0x8)
+                0x00008770                        bss_begin = .
+
+.bss            0x00008770    0x13014
+ *(.bss*)
+ .bss           0x00008770        0x0 boot.o
+ .bss           0x00008770        0x0 switch.o
+ .bss           0x00008770    0x13014 sched.o
+                0x00008770                ticks
+                0x00008774                tcb_list
+                0x0001b774                tid
+                0x0001b778                tcb
+                0x0001b77c                ll_size
+                0x0001b780                last_tid
+ .bss           0x0001b784        0x0 main.o
+ .bss           0x0001b784        0x0 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memset.o)
+ .bss           0x0001b784        0x0 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memcpy-stub.o)
+                0x0001b784                        bss_end = .
+
+.heapstack      0x0001b784     0xc004
+                0x0001b788                        . = ALIGN (0x8)
+ *fill*         0x0001b784        0x4 
+                0x0001b788                        heap_addr = .
+                0x00023788                        . = (. + 0x8000)
+ *fill*         0x0001b788     0x8000 
+                0x00023788                        stack_sys = .
+                0x00024788                        . = (. + 0x1000)
+ *fill*         0x00023788     0x1000 
+                0x00024788                        stack_irq = .
+                0x00025788                        . = (. + 0x1000)
+ *fill*         0x00024788     0x1000 
+                0x00025788                        stack_user1 = .
+                0x00026788                        . = (. + 0x1000)
+ *fill*         0x00025788     0x1000 
+                0x00026788                        stack_user2 = .
+                0x00027788                        . = (. + 0x1000)
+ *fill*         0x00026788     0x1000 
+                0x00027788                        stack_user3 = .
+LOAD boot.o
+LOAD switch.o
+LOAD sched.o
+LOAD main.o
+LOAD /usr/lib/gcc/arm-none-eabi/14.2.0/libgcc.a
+LOAD /usr/arm-none-eabi/lib/libc_nano.a
+OUTPUT(tasks.elf elf32-littlearm)
+LOAD linker stubs
+
+.ARM.attributes
+                0x00000000       0x30
+ .ARM.attributes
+                0x00000000       0x18 boot.o
+ .ARM.attributes
+                0x00000018       0x14 switch.o
+ .ARM.attributes
+                0x0000002c       0x2f sched.o
+ .ARM.attributes
+                0x0000005b       0x2f main.o
+ .ARM.attributes
+                0x0000008a       0x2a /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memset.o)
+ .ARM.attributes
+                0x000000b4       0x2a /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memcpy-stub.o)
+
+.comment        0x00000000       0x1e
+ .comment       0x00000000       0x1e sched.o
+                                 0x1f (size before relaxing)
+ .comment       0x0000001e       0x1f main.o
+ .comment       0x0000001e       0x1f /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memset.o)
+ .comment       0x0000001e       0x1f /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memcpy-stub.o)
+
+.debug_line     0x00000000      0x5c6
+ .debug_line    0x00000000       0x66 boot.o
+ .debug_line    0x00000066       0x53 switch.o
+ .debug_line    0x000000b9      0x1e6 sched.o
+ .debug_line    0x0000029f       0xad main.o
+ .debug_line    0x0000034c      0x112 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memset.o)
+ .debug_line    0x0000045e      0x168 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memcpy-stub.o)
+
+.debug_info     0x00000000      0x72a
+ .debug_info    0x00000000       0x26 boot.o
+ .debug_info    0x00000026       0x26 switch.o
+ .debug_info    0x0000004c      0x431 sched.o
+ .debug_info    0x0000047d       0xac main.o
+ .debug_info    0x00000529       0xe0 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memset.o)
+ .debug_info    0x00000609      0x121 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memcpy-stub.o)
+
+.debug_abbrev   0x00000000      0x3b5
+ .debug_abbrev  0x00000000       0x14 boot.o
+ .debug_abbrev  0x00000014       0x14 switch.o
+ .debug_abbrev  0x00000028      0x1b1 sched.o
+ .debug_abbrev  0x000001d9       0x7d main.o
+ .debug_abbrev  0x00000256       0x9e /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memset.o)
+ .debug_abbrev  0x000002f4       0xc1 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memcpy-stub.o)
+
+.debug_aranges  0x00000000       0xc0
+ .debug_aranges
+                0x00000000       0x20 boot.o
+ .debug_aranges
+                0x00000020       0x20 switch.o
+ .debug_aranges
+                0x00000040       0x20 sched.o
+ .debug_aranges
+                0x00000060       0x20 main.o
+ .debug_aranges
+                0x00000080       0x20 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memset.o)
+ .debug_aranges
+                0x000000a0       0x20 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memcpy-stub.o)
+
+.debug_str      0x00000000      0x401
+ .debug_str     0x00000000      0x401 boot.o
+                                 0x30 (size before relaxing)
+ .debug_str     0x00000401       0x32 switch.o
+ .debug_str     0x00000401      0x2ba sched.o
+ .debug_str     0x00000401       0xab main.o
+ .debug_str     0x00000401      0x199 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memset.o)
+ .debug_str     0x00000401      0x1b7 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memcpy-stub.o)
+
+.debug_frame    0x00000000      0x1ac
+ .debug_frame   0x00000000       0xec sched.o
+ .debug_frame   0x000000ec       0x80 main.o
+ .debug_frame   0x0000016c       0x20 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memset.o)
+ .debug_frame   0x0000018c       0x20 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memcpy-stub.o)
+
+.debug_loclists
+                0x00000000       0xc6
+ .debug_loclists
+                0x00000000       0x3b /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memset.o)
+ .debug_loclists
+                0x0000003b       0x8b /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memcpy-stub.o)
+
+.debug_rnglists
+                0x00000000       0x26
+ .debug_rnglists
+                0x00000000       0x13 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memset.o)
+ .debug_rnglists
+                0x00000013       0x13 /usr/arm-none-eabi/lib/libc_nano.a(libc_a-memcpy-stub.o)
