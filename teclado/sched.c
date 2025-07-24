@@ -35,29 +35,11 @@ typedef struct tcb_s {
  * Estados possíveis de um processo
  */
 typedef enum {
-  TASK_READY,
-  TASK_RUNNING,
-  TASK_BLOCKED,
-  TASK_TERMINATED
+    TASK_READY,
+    TASK_RUNNING,
+    TASK_BLOCKED,
+    TASK_TERMINATED
 } task_state_t;
-
-/**
- * Possíveis razões de um block
- */
-typedef enum {
-	NOT_BLOCKED,
-  SLEEPING,
-  LOCKED
-} block_type_t;
-
-typedef struct block_info_s {
-	block_type_t type;
-	uint32_t info; // informação relevante para o block
-	/* *
-	 * sleep: tick na qual o processo pode voltar a executar
-	 * lock: posição da tranca
-	 */
-} block_info_t;
 
 /**
  *
@@ -71,7 +53,7 @@ typedef struct tcb_ll {
   uint32_t timeslice;    // numero de ticks para a task
   bool preemptible;      // se 1, pode ser preemptado no irq do timer
   task_state_t state;    // Estado da tarefa
-  block_info_t block_info; // Informações sobre o bloqueio da tarefa
+  uint32_t sleep_until;  // Tick até o qual a tarefa permanece bloqueada
 } tcb_ll_t;
 
 /**
@@ -147,70 +129,16 @@ void __attribute__((naked)) sleep(unsigned ticks_to_sleep) {
                 "pop {pc}");
 }
 
-
-/**
- * Inicia uma tranca.
- */
-void __attribute__((naked)) start_lock(unsigned position) {
-   asm volatile("push {lr}  \n\t"
-                "mov r1, r0 \n\t"
-                "mov r0, #6 \n\t"
-                "swi #0     \n\t"
-                "pop {pc}");
-
-/**
- * Tranca um recurso.
- */
-void __attribute__((naked)) lock(unsigned position) {
-   asm volatile("push {lr}  \n\t"
-                "mov r1, r0 \n\t"
-                "mov r0, #7 \n\t"
-                "swi #0     \n\t"
-                "pop {pc}");
-}
-
-/**
- * Destranca um recurso.
- */
-void __attribute__((naked)) unlock(unsigned position) {
-   asm volatile("push {lr}  \n\t"
-                "mov r1, r0 \n\t"
-                "mov r0, #8 \n\t"
-                "swi #0     \n\t"
-                "pop {pc}");
-}
-
-void check_task_block(volatile tcb_ll_t *task) {
-  switch (task->block_info.type) {
-    case(SLEEPING):
-      if (ticks >= task->block_info.info){
-        task->state = TASK_READY;
-        block_info_t noblock = {NOT_BLOCKED, 0};
-        task->block_info = noblock;
-      }
-      return;
-    case(LOCKED):
-      if (*task->block_info.info == 0){
-        task->state = TASK_READY;
-        block_info_t noblock = {NOT_BLOCKED, 0};
-        task->block_info = noblock;
-      }
-      return;
-    default:
-      return;
-  }
-}
-
 volatile tcb_ll_t* find_next_head(){
   if (tid == -1) {
-	  head = head->next;  
+	head = head->next;  
   }
   
   volatile tcb_ll_t *i = head->next;
 
   while (i != head) {
-    if (i->state == TASK_BLOCKED) {
-      check_task_block(i);
+	if (i->state == TASK_BLOCKED && ticks >= i->sleep_until) {
+      i->state = TASK_READY;
     }
     if (i->state == TASK_READY) {
       return i;
@@ -301,35 +229,11 @@ void trata_swi(unsigned op) {
    * sleep
    */
   case 5:
-    block_info_t block_info = {SLEEPING, ticks + tcb->regs[1]};
-    head->block_info = block_info;
+    head->sleep_until = ticks + tcb->regs[1]; // r1 = número de ticks desejado
     head->state = TASK_BLOCKED;
     schedule();
     break;
-  /*
-   * start lock
-   */
-  case 6:
-    *tcb->regs[1] = 0;
-  /*
-   * lock
-   */
-  case 7:
-    if (*tcb->regs[1] != 0) {
-      block_info_t block_info = {LOCKED, tcb->regs[1]};
-      head->block_info = block_info;
-      head->state = TASK_BLOCKED;
-      schedule();
-    } else {
-      *tcb->regs[1] = 1;
-    }
-    break;
-  /*
-   * unlock
-   */
-  case 8:
-    *tcb->regs[1] = 0;
-    break;
+  }
 }
 
 /**
@@ -360,64 +264,64 @@ void sched_init(void) {
    * Configura o primeiro task.
    */
   tcb_t tcb1 = {
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,                      // r0-r12
-    (uint32_t)&stack_user1, // sp
-    0,                      // lr inicial
-    (uint32_t)user1_main,   // pc = lr = ponto de entrada
-    0x10 // valor do cpsr (modo usuário, interrupções habilitadas)
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,                      // r0-r12
+      (uint32_t)&stack_user1, // sp
+      0,                      // lr inicial
+      (uint32_t)user1_main,   // pc = lr = ponto de entrada
+      0x10 // valor do cpsr (modo usuário, interrupções habilitadas)
   };
 
-  tcb_t tcb2 = {
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,                      // r0-r12
-    (uint32_t)&stack_user2, // sp
-    0,                      // lr inicial
-    (uint32_t)user2_main,   // pc = lr = ponto de entrada
-    0x10 // valor do cpsr (modo usuário, interrupções habilitadas)
-  };
+  // tcb_t tcb2 = {
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     0,                      // r0-r12
+  //     (uint32_t)&stack_user2, // sp
+  //     0,                      // lr inicial
+  //     (uint32_t)user2_main,   // pc = lr = ponto de entrada
+  //     0x10 // valor do cpsr (modo usuário, interrupções habilitadas)
+  // };
 
-  tcb_t tcb3 = {
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,                      // r0-r12
-    (uint32_t)&stack_user3, // sp
-    0,                      // lr inicial
-    (uint32_t)user3_main,   // pc = lr = ponto de entrada
-    0x10 // valor do cpsr (modo usuário, interrupções habilitadas)
-  };
+  // tcb_t tcb3 = {
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     0,                      // r0-r12
+  //     (uint32_t)&stack_user3, // sp
+  //     0,                      // lr inicial
+  //     (uint32_t)user3_main,   // pc = lr = ponto de entrada
+  //     0x10 // valor do cpsr (modo usuário, interrupções habilitadas)
+  // };
 
   tcb_t tcb_idle = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (uint32_t)&panic, 0x10 };
 
@@ -426,15 +330,12 @@ void sched_init(void) {
   tcb_list[0].tid = 0;
   tcb_list[0].next = &tcb_list[0];
   tcb_list[0].state = TASK_READY;
-  tcb_list[0].timeslice   = 200000;  // 200 ms
+  tcb_list[0].sleep_until = 0;
+  tcb_list[0].timeslice   = 20000000;  // 20000 ms
   tcb_list[0].preemptible = true;
   
-  block_info_t noblock = {NOT_BLOCKED, 0};
-  tcb_list[0].block_info = noblock;
-  
-  
-  insert_tcb(&tcb_list[0], tcb2, 100000, true);
-  insert_tcb(tcb_list[0].next, tcb3, 0, false);
+  // insert_tcb(&tcb_list[0], tcb2, 100000, true);
+  // insert_tcb(tcb_list[0].next, tcb3, 0, false);
 
   // Criação da tarefa idle (última da lista)
   last_tid++;             // Incrementa o identificador global para a nova tarefa
@@ -452,7 +353,7 @@ void sched_init(void) {
 
   idle_task.timeslice = 200000;
   idle_task.preemptible = true; // Define que a tarefa idle pode ser preemptada por interrupção
-  idle_task.block_info = noblock;
+  idle_task.sleep_until = 0; // Não está dormindo, então sleep_until = 0
   
   tid = 0;
   tcb = &head->tcb;
@@ -479,15 +380,13 @@ void insert_tcb(volatile tcb_ll_t *head, tcb_t tcb, uint32_t timeslice, bool pre
   if (ll_size >= MAX_TASKS)
     return;
 
-  block_info_t noblock = {NOT_BLOCKED, 0};
-
   tcb_list[ll_size].tcb = tcb;
   tcb_list[ll_size].tid = last_tid;
   tcb_list[ll_size].next = head->next;
   tcb_list[ll_size].state = TASK_READY;
   tcb_list[ll_size].timeslice = timeslice;
   tcb_list[ll_size].preemptible = preemptible;
-  tcb_list[ll_size].block_info = noblock;
+  tcb_list[ll_size].sleep_until = 0;
   head->next = &tcb_list[ll_size];
 
   return;

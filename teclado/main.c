@@ -1,4 +1,5 @@
 #include "sched.h"
+#include "teclado.c"
 
 extern void enable_irq(int);
 
@@ -6,6 +7,7 @@ extern void enable_irq(int);
  * Ponto de entrada do sistema.
  */
 void system_main(void) {
+  init_keyboard();
   sched_init();
   asm volatile("b task_switch"); // transfere o controle ao primeiro thread
 }
@@ -14,14 +16,7 @@ void system_main(void) {
  * Ponto de entrada do primeiro task.
  */
 void user1_main(void) {
-  int i;
-  for (;;) {
-    for (i = 0; i < 100; i++) {
-      asm volatile("nop");
-    }
-    asm volatile("nop");
-    sleep(4);
-  }
+  read_keyboard();
 }
 
 /*

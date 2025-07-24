@@ -1,18 +1,27 @@
 #include "bcm.h"
 
-#define LINE1_OUTPUT_GPIO 9
-#define LINE2_OUTPUT_GPIO 25 
-#define LINE3_OUTPUT_GPIO 11
-#define LINE4_OUTPUT_GPIO 8
+#define COL1_OUTPUT_GPIO 19
+#define COL2_OUTPUT_GPIO 13 
+#define COL3_OUTPUT_GPIO 6
+#define COL4_OUTPUT_GPIO 5
 
-#define LINE1_INPUT_GPIO 19
-#define LINE2_INPUT_GPIO 16 
-#define LINE3_INPUT_GPIO 26
-#define LINE4_INPUT_GPIO 20
+#define ROW1_INPUT_GPIO 16
+#define ROW2_INPUT_GPIO 20 
+#define ROW3_INPUT_GPIO 12
+#define ROW4_INPUT_GPIO 21
 
-#define debounce_cycles 4
+#define DEBOUNCE_CYCLES 100
+#define ROWS 4
+#define COLS 4
 
-int input_line, output_line, read_matrix[16];
+#define OUTPUT_LENGTH 1024
+
+int read_matrix[ROWS][COLS], last_output;
+
+int output[OUTPUT_LENGTH];
+
+int out_pins[ROWS] = {COL1_OUTPUT_GPIO, COL2_OUTPUT_GPIO, COL3_OUTPUT_GPIO, COL4_OUTPUT_GPIO};
+int in_pins[COLS] = {ROW1_INPUT_GPIO, ROW2_INPUT_GPIO, ROW3_INPUT_GPIO, ROW4_INPUT_GPIO};
 
 void setup_io(int gpio, bool out) {
     int index = gpio / 10;
@@ -42,17 +51,44 @@ void write_io(int gpio, bool gpio_on) {
 }
 
 void init_keyboard() {
-    setup_io(LINE1_OUTPUT_GPIO, true);
-    setup_io(LINE2_OUTPUT_GPIO, true);
-    setup_io(LINE3_OUTPUT_GPIO, true);
-    setup_io(LINE4_OUTPUT_GPIO, true);
+    setup_io(COL1_OUTPUT_GPIO, true);
+    setup_io(COL2_OUTPUT_GPIO, true);
+    setup_io(COL3_OUTPUT_GPIO, true);
+    setup_io(COL4_OUTPUT_GPIO, true);
     
-    setup_io(LINE1_INPUT_GPIO, false);
-    setup_io(LINE2_INPUT_GPIO, false);
-    setup_io(LINE3_INPUT_GPIO, false);
-    setup_io(LINE4_INPUT_GPIO, false);
+    setup_io(ROW1_INPUT_GPIO, false);
+    setup_io(ROW2_INPUT_GPIO, false);
+    setup_io(ROW3_INPUT_GPIO, false);
+    setup_io(ROW4_INPUT_GPIO, false);
+
+    for (int i = 0; i < COLS; i++)
+        write_io(out_pins[i], false);  
+    
+    last_output = 0;
 }
 
 void read_keyboard() {
-    for
+    while (1) {
+        for (int c = 0; c < COLS; c++) {
+            write_io(out_pins[c], true);
+    
+            for(int r = 0; r < ROWS; r++) {
+                if (read_io(in_pins[r])) {
+                    if (read_matrix[r][c] < DEBOUNCE_CYCLES)
+                        read_matrix[r][c]++;
+                    else {
+                        output[last_output++] = r * ROWS + c;
+                        read_matrix[r][c] = 0;
+                        if (last_output >= OUTPUT_LENGTH) {
+                            last_output = 0;
+                        }
+                    }
+                } else {
+                    read_matrix[r][c] = 0;
+                }
+            }
+    
+            write_io(out_pins[c], false);
+        }
+    }
 }
