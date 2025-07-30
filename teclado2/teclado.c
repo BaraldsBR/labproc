@@ -3,6 +3,7 @@
 #include "uart.h"
 
 int read_matrix[ROWS][COLS], last_output;
+bool already_read_matrix[ROWS][COLS];
 
 int output[OUTPUT_LENGTH];
 
@@ -41,8 +42,6 @@ void init_keyboard(bool use_uart) {
     uart_enabled = use_uart;
     if (uart_enabled){
         uart_init();
-        while (1)
-            uart_puts("ouvo");
     }
 
     setup_io(COL1_OUTPUT_GPIO, true);
@@ -64,9 +63,9 @@ void init_keyboard(bool use_uart) {
 char keyboard_position_conversion(int row, int col) {
     bool is_letter = (row == 3) || ((row == 2) && (col > 1));
     if (is_letter) {
-        return (char) (row-2) + ((col-2) * ROWS) + 65;
+        return (char) (col-2) + ((row-2) * ROWS) + 65;
     } else {
-        return (char) row + (col * ROWS) + 48;
+        return (char) col + (row * ROWS) + 48;
     }
 }
 
@@ -77,7 +76,9 @@ void read_keyboard() {
     
             for(int r = 0; r < ROWS; r++) {
                 if (read_io(in_pins[r])) {
-                    if (read_matrix[r][c] < DEBOUNCE_CYCLES)
+                    if ((read_matrix[r][c] < FIRST_DEBOUNCE_CYCLES && !already_read_matrix[r][c]) 
+                        || (read_matrix[r][c] < REMAINING_DEBOUNCE_CYCLES && already_read_matrix[r][c])
+                    ) 
                         read_matrix[r][c]++;
                     else {
                         output[last_output++] = r * ROWS + c;
@@ -85,12 +86,19 @@ void read_keyboard() {
                         if (uart_enabled)
                             uart_send(keyboard_position_conversion(r, c));
                         
-                        read_matrix[r][c] = 0;
+                        if (!already_read_matrix[r][c]) {
+                            read_matrix[r][c] = -SECOND_DEBOUNCE_DELAY;
+                            already_read_matrix[r][c] = true;
+                        } else{
+                            read_matrix[r][c] = 0;
+                        }
+
                         if (last_output >= OUTPUT_LENGTH) {
                             last_output = 0;
                         }
                     }
                 } else {
+                    already_read_matrix[r][c] = false;
                     read_matrix[r][c] = 0;
                 }
             }

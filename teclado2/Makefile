@@ -1,8 +1,8 @@
 
-FONTES = boot.s switch.s sched.c main.c teclado.c uart.c
+FONTES = boot.s main.c teclado.c uart.c
 RPICPU = bcm2836
 LDSCRIPT = linker.ld
-PROJETO = tasks
+PROJETO = teclado
 
 # Interface serial a utilizar
 TTY = /dev/ttyUSB0
@@ -16,7 +16,7 @@ OCD_CFG = rpi2-ftdi.cfg
 EXEC = ${PROJETO}.elf
 MAP = ${PROJETO}.map
 LIST = ${PROJETO}.list
-IMAGE = ${PROJETO}.img
+IMAGE = kernel.img
 HEXFL = ${PROJETO}.hex
 
 PREFIXO = arm-none-eabi-
